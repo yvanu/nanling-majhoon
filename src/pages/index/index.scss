@@ -337,6 +337,36 @@
   display: block;
 }
 
+.discard-owner {
+  display: block;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.meld-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 14px;
+  overflow-x: auto;
+}
+
+.meld-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(215, 183, 106, 0.16);
+  border: 1px solid rgba(215, 183, 106, 0.45);
+  white-space: nowrap;
+}
+
+.mahjong-tile.wildcard {
+  border-color: #d7b76a;
+  box-shadow: 0 0 0 3px rgba(215, 183, 106, 0.26);
+}
+
 .human-area {
   padding: 0 18px 24px;
   background: linear-gradient(180deg, #10251d, #0c1b16);
