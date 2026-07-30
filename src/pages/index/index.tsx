@@ -1,27 +1,47 @@
-import { Button, Input, Picker, ScrollView, Text, View } from '@tarojs/components'
+import { Button, Picker, ScrollView, Text, View } from '@tarojs/components'
 import { useMemo, useState } from 'react'
 import './index.scss'
 
+type Suit = '万' | '条' | '筒'
+type Tile = { id: string; suit: Suit; value: number }
 type Player = {
   id: number
   name: string
   isHuman: boolean
   score: number
-  wins: number
-  maxHand: number
-  dealerWins: number
-}
-
-type HandRecord = {
-  hand: number
-  dealerId: number
-  winnerId: number
-  points: number
-  dealerStreak: number
+  hand: Tile[]
+  discards: Tile[]
+  melds: Tile[][]
 }
 
 const DEFAULT_NAMES = ['我', '南陵小智', '弋江阿虎机', '漳河小雀']
-const HAND_OPTIONS = [4, 8, 12, 16]
+const ROUND_OPTIONS = [1, 2, 4, 8]
+const SUITS: Suit[] = ['万', '条', '筒']
+
+function createDeck(): Tile[] {
+  const tiles: Tile[] = []
+  SUITS.forEach((suit) => {
+    for (let value = 1; value <= 9; value += 1) {
+      for (let copy = 0; copy < 4; copy += 1) {
+        tiles.push({ id: `${suit}-${value}-${copy}`, suit, value })
+      }
+    }
+  })
+  for (let i = tiles.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[tiles[i], tiles[j]] = [tiles[j], tiles[i]]
+  }
+  return tiles
+}
+
+function sortHand(hand: Tile[]) {
+  const order: Record<Suit, number> = { 万: 0, 条: 1, 筒: 2 }
+  return [...hand].sort((a, b) => order[a.suit] - order[b.suit] || a.value - b.value)
+}
+
+function tileText(tile: Tile) {
+  return `${tile.value}${tile.suit}`
+}
 
 function createPlayers(): Player[] {
   return DEFAULT_NAMES.map((name, id) => ({
@@ -29,87 +49,123 @@ function createPlayers(): Player[] {
     name,
     isHuman: id === 0,
     score: 0,
-    wins: 0,
-    maxHand: 0,
-    dealerWins: 0,
+    hand: [],
+    discards: [],
+    melds: [],
   }))
 }
 
 export default function Index() {
   const [screen, setScreen] = useState<'setup' | 'game' | 'result'>('setup')
-  const [totalHands, setTotalHands] = useState(8)
+  const [rounds, setRounds] = useState(1)
+  const [currentRound, setCurrentRound] = useState(1)
   const [players, setPlayers] = useState<Player[]>(createPlayers())
-  const [records, setRecords] = useState<HandRecord[]>([])
+  const [wall, setWall] = useState<Tile[]>([])
+  const [turn, setTurn] = useState(0)
   const [dealerId, setDealerId] = useState(0)
-  const [dealerStreak, setDealerStreak] = useState(0)
-  const [handNo, setHandNo] = useState(1)
-  const [selectedWinner, setSelectedWinner] = useState(0)
-  const [basePoints, setBasePoints] = useState('1')
+  const [selectedTileId, setSelectedTileId] = useState<string | null>(null)
+  const [message, setMessage] = useState('轮到你出牌')
+  const [winnerId, setWinnerId] = useState<number | null>(null)
 
-  const ranking = useMemo(
-    () => [...players].sort((a, b) => b.score - a.score || b.wins - a.wins),
-    [players],
-  )
+  const ranking = useMemo(() => [...players].sort((a, b) => b.score - a.score), [players])
+
+  const dealRound = (roundNo: number, nextDealer: number) => {
+    const deck = createDeck()
+    const nextPlayers = createPlayers().map((player) => ({ ...player, score: players[player.id]?.score || 0 }))
+    for (let i = 0; i < 13; i += 1) {
+      nextPlayers.forEach((player) => {
+        const tile = deck.pop()
+        if (tile) player.hand.push(tile)
+      })
+    }
+    const dealerTile = deck.pop()
+    if (dealerTile) nextPlayers[nextDealer].hand.push(dealerTile)
+    nextPlayers.forEach((player) => { player.hand = sortHand(player.hand) })
+    setPlayers(nextPlayers)
+    setWall(deck)
+    setTurn(nextDealer)
+    setDealerId(nextDealer)
+    setCurrentRound(roundNo)
+    setSelectedTileId(null)
+    setWinnerId(null)
+    setMessage(nextDealer === 0 ? '轮到你出牌' : `${nextPlayers[nextDealer].name}思考中…`)
+    setScreen('game')
+    if (nextDealer !== 0) setTimeout(() => aiTurn(nextDealer, nextPlayers, deck), 500)
+  }
 
   const startGame = () => {
     setPlayers(createPlayers())
-    setRecords([])
-    setDealerId(0)
-    setDealerStreak(0)
-    setHandNo(1)
-    setSelectedWinner(0)
-    setBasePoints('1')
-    setScreen('game')
+    dealRound(1, 0)
   }
 
-  const finishHand = () => {
-    const raw = Number(basePoints)
-    const handPoints = Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 1
-    const winnerIsDealer = selectedWinner === dealerId
-    const nextStreak = winnerIsDealer ? dealerStreak + 1 : 0
-    const awarded = handPoints + (winnerIsDealer ? nextStreak : 0)
-    const loss = awarded
+  const drawTile = (playerId: number, sourcePlayers = players, sourceWall = wall) => {
+    if (!sourceWall.length) return { nextPlayers: sourcePlayers, nextWall: sourceWall }
+    const nextWall = [...sourceWall]
+    const tile = nextWall.pop()!
+    const nextPlayers = sourcePlayers.map((player) =>
+      player.id === playerId ? { ...player, hand: sortHand([...player.hand, tile]) } : player,
+    )
+    return { nextPlayers, nextWall }
+  }
 
-    const nextPlayers = players.map((player) => {
-      if (player.id === selectedWinner) {
-        return {
-          ...player,
-          score: player.score + loss * 3,
-          wins: player.wins + 1,
-          dealerWins: player.dealerWins + (winnerIsDealer ? 1 : 0),
-          maxHand: Math.max(player.maxHand, awarded),
-        }
+  const discardFrom = (playerId: number, tileId: string, sourcePlayers = players, sourceWall = wall) => {
+    const nextPlayers = sourcePlayers.map((player) => {
+      if (player.id !== playerId) return player
+      const tile = player.hand.find((item) => item.id === tileId)
+      if (!tile) return player
+      return {
+        ...player,
+        hand: player.hand.filter((item) => item.id !== tileId),
+        discards: [...player.discards, tile],
       }
-      return { ...player, score: player.score - loss }
     })
-
-    const nextRecords = [
-      ...records,
-      {
-        hand: handNo,
-        dealerId,
-        winnerId: selectedWinner,
-        points: awarded,
-        dealerStreak: nextStreak,
-      },
-    ]
-
+    const nextTurn = (playerId + 1) % 4
     setPlayers(nextPlayers)
-    setRecords(nextRecords)
+    setWall(sourceWall)
+    setTurn(nextTurn)
+    setSelectedTileId(null)
+    if (nextTurn === 0) {
+      const drawn = drawTile(0, nextPlayers, sourceWall)
+      setPlayers(drawn.nextPlayers)
+      setWall(drawn.nextWall)
+      setMessage('你摸了一张牌，请出牌')
+    } else {
+      setMessage(`${nextPlayers[nextTurn].name}思考中…`)
+      setTimeout(() => aiTurn(nextTurn, nextPlayers, sourceWall), 500)
+    }
+  }
 
-    if (handNo >= totalHands) {
-      setScreen('result')
+  const aiTurn = (playerId: number, sourcePlayers = players, sourceWall = wall) => {
+    const drawn = drawTile(playerId, sourcePlayers, sourceWall)
+    const ai = drawn.nextPlayers[playerId]
+    if (!ai.hand.length) return
+    const index = Math.floor(Math.random() * ai.hand.length)
+    const tile = ai.hand[index]
+    discardFrom(playerId, tile.id, drawn.nextPlayers, drawn.nextWall)
+  }
+
+  const humanDiscard = () => {
+    if (turn !== 0 || !selectedTileId) return
+    discardFrom(0, selectedTileId)
+  }
+
+  const declareWin = () => {
+    if (turn !== 0) return
+    const updated = players.map((player) => ({
+      ...player,
+      score: player.id === 0 ? player.score + 3 : player.score - 1,
+    }))
+    setPlayers(updated)
+    setWinnerId(0)
+    setScreen('result')
+  }
+
+  const nextRound = () => {
+    if (currentRound >= rounds) {
+      setScreen('setup')
       return
     }
-
-    if (winnerIsDealer) {
-      setDealerStreak(nextStreak)
-    } else {
-      setDealerId((dealerId + 1) % 4)
-      setDealerStreak(0)
-    }
-    setHandNo(handNo + 1)
-    setBasePoints('1')
+    dealRound(currentRound + 1, (dealerId + 1) % 4)
   }
 
   if (screen === 'setup') {
@@ -117,24 +173,24 @@ export default function Index() {
       <View className='page setup-page'>
         <View className='hero-card'>
           <Text className='eyebrow'>南陵本地玩法</Text>
-          <Text className='title'>九支麻将 · 人机版</Text>
-          <Text className='subtitle'>四人对局，1名玩家 + 3名电脑，支持连庄与战绩统计。</Text>
+          <Text className='title'>九支麻将 · 人机对局</Text>
+          <Text className='subtitle'>你和三名电脑玩家真实摸牌、出牌并完成整场对局。</Text>
         </View>
 
         <View className='panel'>
           <Text className='panel-title'>对局设置</Text>
           <View className='setting-row'>
             <View>
-              <Text className='setting-label'>总对局数</Text>
-              <Text className='setting-desc'>每局结算后自动进入下一局</Text>
+              <Text className='setting-label'>圈数</Text>
+              <Text className='setting-desc'>每圈结束后自动进入下一圈</Text>
             </View>
             <Picker
               mode='selector'
-              range={HAND_OPTIONS.map((item) => `${item}局`)}
-              value={HAND_OPTIONS.indexOf(totalHands)}
-              onChange={(event) => setTotalHands(HAND_OPTIONS[Number(event.detail.value)])}
+              range={ROUND_OPTIONS.map((item) => `${item}圈`)}
+              value={ROUND_OPTIONS.indexOf(rounds)}
+              onChange={(event) => setRounds(ROUND_OPTIONS[Number(event.detail.value)])}
             >
-              <View className='picker-value'>{totalHands}局</View>
+              <View className='picker-value'>{rounds}圈</View>
             </Picker>
           </View>
         </View>
@@ -162,98 +218,89 @@ export default function Index() {
     return (
       <ScrollView className='page result-page' scrollY>
         <View className='result-hero'>
-          <Text className='eyebrow'>本场结束</Text>
-          <Text className='title'>最终战绩</Text>
-          <Text className='subtitle'>共完成 {records.length} 局</Text>
+          <Text className='eyebrow'>本圈结束</Text>
+          <Text className='title'>{winnerId === 0 ? '你胡牌了' : '对局结束'}</Text>
+          <Text className='subtitle'>第 {currentRound}/{rounds} 圈</Text>
         </View>
-
         <View className='ranking-list'>
           {ranking.map((player, index) => (
             <View className='rank-card' key={player.id}>
               <Text className='rank-no'>#{index + 1}</Text>
               <View className={`avatar avatar-${player.id}`}>{player.name.slice(0, 1)}</View>
-              <View className='rank-main'>
-                <Text className='player-name'>{player.name}</Text>
-                <Text className='rank-meta'>自摸 {player.wins} · 连庄胡 {player.dealerWins} · 单局最高 {player.maxHand}分</Text>
-              </View>
+              <View className='rank-main'><Text className='player-name'>{player.name}</Text></View>
               <Text className={player.score >= 0 ? 'score positive' : 'score negative'}>
                 {player.score > 0 ? '+' : ''}{player.score}
               </Text>
             </View>
           ))}
         </View>
-
-        <View className='panel'>
-          <Text className='panel-title'>逐局记录</Text>
-          {records.map((record) => (
-            <View className='record-row' key={record.hand}>
-              <Text>第{record.hand}局</Text>
-              <Text>{players[record.winnerId].name} 自摸 {record.points}分</Text>
-            </View>
-          ))}
-        </View>
-
-        <Button className='primary-btn' onClick={() => setScreen('setup')}>再来一场</Button>
+        <Button className='primary-btn' onClick={nextRound}>
+          {currentRound >= rounds ? '返回首页' : '进入下一圈'}
+        </Button>
       </ScrollView>
     )
   }
 
+  const human = players[0]
   return (
-    <ScrollView className='page game-page' scrollY>
-      <View className='game-head'>
-        <View>
-          <Text className='eyebrow'>第 {handNo}/{totalHands} 局</Text>
-          <Text className='game-title'>庄家：{players[dealerId].name}</Text>
+    <View className='table-page'>
+      <View className='table-topbar'>
+        <Text>第 {currentRound}/{rounds} 圈</Text>
+        <Text>牌墙 {wall.length}</Text>
+      </View>
+
+      <View className='mahjong-table'>
+        <View className='opponent opponent-top'>
+          <Text className='opponent-name'>{players[2].name}</Text>
+          <View className='back-row'>{players[2].hand.map((tile) => <View className='tile-back' key={tile.id} />)}</View>
         </View>
-        <View className='streak-chip'>连庄 {dealerStreak}</View>
-      </View>
+        <View className='opponent opponent-left'>
+          <Text className='opponent-name'>{players[3].name}</Text>
+          <Text className='tile-count'>{players[3].hand.length}张</Text>
+        </View>
+        <View className='opponent opponent-right'>
+          <Text className='opponent-name'>{players[1].name}</Text>
+          <Text className='tile-count'>{players[1].hand.length}张</Text>
+        </View>
 
-      <View className='score-grid'>
-        {players.map((player) => (
-          <View className={`score-card ${player.id === dealerId ? 'dealer' : ''}`} key={player.id}>
-            <View className={`avatar avatar-${player.id}`}>{player.name.slice(0, 1)}</View>
-            <Text className='score-name'>{player.name}</Text>
-            <Text className={player.score >= 0 ? 'score positive' : 'score negative'}>
-              {player.score > 0 ? '+' : ''}{player.score}
-            </Text>
-            {player.id === dealerId && <Text className='dealer-badge'>庄</Text>}
-          </View>
-        ))}
-      </View>
+        <View className='center-info'>
+          <Text className='dealer-text'>庄 {players[dealerId].name}</Text>
+          <Text className='turn-text'>{message}</Text>
+        </View>
 
-      <View className='panel settle-panel'>
-        <Text className='panel-title'>本局结算</Text>
-        <Text className='field-label'>选择自摸玩家</Text>
-        <View className='winner-grid'>
-          {players.map((player) => (
-            <View
-              key={player.id}
-              className={`winner-option ${selectedWinner === player.id ? 'selected' : ''}`}
-              onClick={() => setSelectedWinner(player.id)}
-            >
-              <Text>{player.name}</Text>
-              {player.id === dealerId && <Text className='mini-dealer'>庄</Text>}
-            </View>
+        <View className='discard-area'>
+          {players.flatMap((player) => player.discards).map((tile) => (
+            <View className='discard-tile' key={tile.id}><Text>{tile.value}</Text><Text>{tile.suit}</Text></View>
           ))}
         </View>
-
-        <Text className='field-label'>基础分</Text>
-        <View className='input-wrap'>
-          <Input
-            className='score-input'
-            type='number'
-            value={basePoints}
-            onInput={(event) => setBasePoints(event.detail.value)}
-            placeholder='请输入牌型合计分'
-          />
-          <Text className='unit'>分</Text>
-        </View>
-        <Text className='tip'>庄家自摸时，系统会按当前连庄次数自动加分；胜者收取其余三家等额分数。</Text>
       </View>
 
-      <Button className='primary-btn' onClick={finishHand}>
-        {handNo >= totalHands ? '完成本场并查看战绩' : '结算并进入下一局'}
-      </Button>
-    </ScrollView>
+      <View className='human-area'>
+        <View className='human-status'>
+          <Text>{human.name}</Text>
+          <Text>{turn === 0 ? '你的回合' : '等待对手'}</Text>
+        </View>
+        <ScrollView className='hand-scroll' scrollX>
+          <View className='hand-row'>
+            {human.hand.map((tile) => (
+              <View
+                key={tile.id}
+                className={`mahjong-tile ${selectedTileId === tile.id ? 'selected' : ''}`}
+                onClick={() => turn === 0 && setSelectedTileId(tile.id)}
+              >
+                <Text className='tile-number'>{tile.value}</Text>
+                <Text className='tile-suit'>{tile.suit}</Text>
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+        <View className='action-row'>
+          <Button className='secondary-btn' disabled={turn !== 0} onClick={declareWin}>胡</Button>
+          <Button className='primary-btn action-primary' disabled={turn !== 0 || !selectedTileId} onClick={humanDiscard}>
+            {selectedTileId ? `打出 ${tileText(human.hand.find((tile) => tile.id === selectedTileId)!)}` : '请选择一张牌'}
+          </Button>
+        </View>
+      </View>
+    </View>
   )
 }
