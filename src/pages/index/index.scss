@@ -1,0 +1,333 @@
+.page {
+  min-height: 100vh;
+  padding: 32px;
+  background: linear-gradient(180deg, #10251d 0%, #0c1b16 100%);
+}
+
+.setup-page,
+.game-page,
+.result-page {
+  padding-bottom: 56px;
+}
+
+.hero-card,
+.result-hero {
+  padding: 44px 34px;
+  border-radius: 28px;
+  background: linear-gradient(135deg, rgba(36, 91, 68, 0.96), rgba(18, 51, 39, 0.96));
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.22);
+  margin-bottom: 28px;
+}
+
+.eyebrow {
+  display: block;
+  color: #d7b76a;
+  font-size: 24px;
+  letter-spacing: 4px;
+  margin-bottom: 12px;
+}
+
+.title {
+  display: block;
+  font-size: 48px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.subtitle {
+  display: block;
+  margin-top: 18px;
+  color: rgba(244, 241, 232, 0.76);
+  font-size: 27px;
+  line-height: 1.7;
+}
+
+.panel {
+  padding: 30px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 24px;
+}
+
+.panel-title {
+  display: block;
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+
+.setting-row,
+.player-row,
+.record-row,
+.rank-card,
+.game-head {
+  display: flex;
+  align-items: center;
+}
+
+.setting-row,
+.record-row {
+  justify-content: space-between;
+}
+
+.setting-label {
+  display: block;
+  font-size: 29px;
+  font-weight: 600;
+}
+
+.setting-desc,
+.player-role,
+.rank-meta,
+.tip {
+  display: block;
+  color: rgba(244, 241, 232, 0.6);
+  font-size: 23px;
+  line-height: 1.6;
+}
+
+.picker-value {
+  min-width: 138px;
+  padding: 18px 24px;
+  text-align: center;
+  border-radius: 18px;
+  color: #163126;
+  background: #e2c880;
+  font-weight: 700;
+}
+
+.player-row {
+  padding: 18px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.player-row:last-child,
+.record-row:last-child {
+  border-bottom: none;
+}
+
+.avatar {
+  width: 74px;
+  height: 74px;
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  font-weight: 800;
+  color: #10251d;
+  background: #e2c880;
+  flex-shrink: 0;
+}
+
+.avatar-1 { background: #a7d8c1; }
+.avatar-2 { background: #d9b8e8; }
+.avatar-3 { background: #efb3a8; }
+
+.player-copy,
+.rank-main {
+  flex: 1;
+  min-width: 0;
+  margin-left: 20px;
+}
+
+.player-name {
+  display: block;
+  font-size: 29px;
+  font-weight: 700;
+}
+
+.seat {
+  color: #d7b76a;
+  font-weight: 800;
+}
+
+.primary-btn {
+  margin-top: 28px;
+  height: 96px;
+  line-height: 96px;
+  border-radius: 24px;
+  background: #d7b76a;
+  color: #11251d;
+  font-size: 31px;
+  font-weight: 800;
+}
+
+.game-head {
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.game-title {
+  display: block;
+  font-size: 38px;
+  font-weight: 800;
+}
+
+.streak-chip,
+.dealer-badge,
+.mini-dealer {
+  border-radius: 999px;
+  background: #d7b76a;
+  color: #10251d;
+  font-weight: 800;
+}
+
+.streak-chip {
+  padding: 14px 20px;
+  font-size: 24px;
+}
+
+.score-grid,
+.winner-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.score-grid {
+  margin-bottom: 24px;
+}
+
+.score-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 132px;
+  padding: 18px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.score-card.dealer {
+  border-color: #d7b76a;
+  box-shadow: inset 0 0 0 1px rgba(215, 183, 106, 0.25);
+}
+
+.score-card .avatar {
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  font-size: 24px;
+}
+
+.score-name {
+  flex: 1;
+  margin-left: 14px;
+  font-size: 24px;
+}
+
+.score {
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.positive { color: #8ee1b6; }
+.negative { color: #ef9f93; }
+
+.dealer-badge {
+  position: absolute;
+  right: 12px;
+  top: 10px;
+  padding: 4px 10px;
+  font-size: 18px;
+}
+
+.field-label {
+  display: block;
+  margin: 24px 0 14px;
+  color: rgba(244, 241, 232, 0.78);
+  font-size: 25px;
+}
+
+.winner-option {
+  position: relative;
+  padding: 24px 18px;
+  border-radius: 18px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 25px;
+}
+
+.winner-option.selected {
+  color: #10251d;
+  background: #e2c880;
+  border-color: #e2c880;
+  font-weight: 800;
+}
+
+.mini-dealer {
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-size: 17px;
+}
+
+.input-wrap {
+  display: flex;
+  align-items: center;
+  padding: 0 22px;
+  height: 88px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.score-input {
+  flex: 1;
+  color: #f4f1e8;
+  font-size: 30px;
+}
+
+.unit {
+  color: #d7b76a;
+  font-size: 26px;
+}
+
+.tip {
+  margin-top: 14px;
+}
+
+.result-page {
+  height: 100vh;
+}
+
+.ranking-list {
+  margin-bottom: 24px;
+}
+
+.rank-card {
+  min-height: 116px;
+  padding: 18px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 14px;
+}
+
+.rank-no {
+  width: 54px;
+  color: #d7b76a;
+  font-size: 25px;
+  font-weight: 800;
+}
+
+.rank-card .avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
+  font-size: 24px;
+}
+
+.rank-meta {
+  margin-top: 5px;
+  font-size: 20px;
+}
+
+.record-row {
+  min-height: 70px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  color: rgba(244, 241, 232, 0.8);
+  font-size: 23px;
+}
