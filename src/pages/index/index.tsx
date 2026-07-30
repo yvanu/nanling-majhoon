@@ -62,8 +62,13 @@ function sameTile(a: Tile, b: Tile) {
   return tileCode(a) === tileCode(b)
 }
 
-function sortHand(hand: Tile[]) {
+function sortHand(hand: Tile[], wildcard?: Tile | null) {
   return [...hand].sort((a, b) => {
+    if (wildcard) {
+      const aWild = sameTile(a, wildcard)
+      const bWild = sameTile(b, wildcard)
+      if (aWild !== bWild) return aWild ? -1 : 1
+    }
     if (a.kind !== b.kind) return a.kind === 'suit' ? -1 : 1
     if (a.kind === 'honor' && b.kind === 'honor') return HONOR_ORDER[a.honor!] - HONOR_ORDER[b.honor!]
     return SUIT_ORDER[a.suit!] - SUIT_ORDER[b.suit!] || a.value! - b.value!
@@ -327,7 +332,7 @@ export default function Index() {
     for (let i = 0; i < 13; i += 1) nextPlayers.forEach((player) => { const tile = deck.pop(); if (tile) player.hand.push(tile) })
     const dealerTile = deck.pop()
     if (dealerTile) nextPlayers[nextDealer].hand.push(dealerTile)
-    nextPlayers.forEach((player) => { player.hand = sortHand(player.hand) })
+    nextPlayers.forEach((player) => { player.hand = sortHand(player.hand, nextWild) })
     setPlayers(nextPlayers)
     setWall(deck)
     setTurn(nextDealer)
@@ -356,7 +361,7 @@ export default function Index() {
     if (!sourceWall.length) return { nextPlayers: sourcePlayers, nextWall: sourceWall, tile: null as Tile | null }
     const nextWall = [...sourceWall]
     const tile = nextWall.pop()!
-    const nextPlayers = sourcePlayers.map((player) => player.id === playerId ? { ...player, hand: sortHand([...player.hand, tile]) } : player)
+    const nextPlayers = sourcePlayers.map((player) => player.id === playerId ? { ...player, hand: sortHand([...player.hand, tile], wildcard) } : player)
     return { nextPlayers, nextWall, tile }
   }
 
@@ -650,6 +655,7 @@ export default function Index() {
   }
 
   const selectedTile = human.hand.find((tile) => tile.id === selectedTileId)
+  const selectedTileCode = selectedTile ? tileCode(selectedTile) : null
   return (
     <View className='table-page'>
       <View className='table-topbar'>
@@ -678,14 +684,19 @@ export default function Index() {
           <Text className='turn-text'>{message}</Text>
         </View>
 
-        <View className='discard-area'>
-          {players.flatMap((player) => player.discards.map((tile) => ({ playerId: player.id, tile }))).map(({ playerId, tile }) => (
-            <View className={`discard-tile suit-${tile.kind === 'suit' ? tile.suit : 'honor'}`} key={tile.id}>
-              <Text className='discard-owner'>{SEATS[playerId]}</Text>
-              <Text>{tileText(tile)}</Text>
-            </View>
-          ))}
-        </View>
+        {players.map((player) => (
+          <View className={`discard-river river-${player.id}`} key={`river-${player.id}`}>
+            {player.discards.map((tile) => (
+              <View
+                className={`discard-tile suit-${tile.kind === 'suit' ? tile.suit : 'honor'} ${selectedTileCode === tileCode(tile) ? 'matched' : ''}`}
+                key={tile.id}
+              >
+                <Text>{tile.kind === 'honor' ? tile.honor : tile.value}</Text>
+                <Text className='discard-suit'>{tile.kind === 'honor' ? '字' : tile.suit}</Text>
+              </View>
+            ))}
+          </View>
+        ))}
       </View>
 
       <View className='human-area'>
@@ -696,8 +707,14 @@ export default function Index() {
             {human.hand.map((tile) => (
               <View key={tile.id} className={`mahjong-tile ${selectedTileId === tile.id ? 'selected' : ''} ${wildcard && sameTile(tile, wildcard) ? 'wildcard' : ''} suit-${tile.kind === 'suit' ? tile.suit : 'honor'}`} onClick={() => turn === 0 && !pendingAction && setSelectedTileId(tile.id)}>
                 {wildcard && sameTile(tile, wildcard) && <Text className='wild-mark'>赖</Text>}
-                <Text className='tile-number'>{tile.kind === 'honor' ? tile.honor : tile.value}</Text>
-                <Text className='tile-suit'>{tile.kind === 'honor' ? '字' : tile.suit}</Text>
+                {tile.kind === 'suit' ? (
+                  <>
+                    <Text className='tile-glyph'>{tile.value}</Text>
+                    <Text className='tile-glyph-suit'>{tile.suit}</Text>
+                  </>
+                ) : (
+                  <Text className='tile-honor'>{tile.honor}</Text>
+                )}
               </View>
             ))}
           </View>
