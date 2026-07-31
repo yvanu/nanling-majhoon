@@ -79,6 +79,65 @@ function tileText(tile: Tile) {
   return tile.kind === 'honor' ? tile.honor! : `${tile.value}${tile.suit}`
 }
 
+function tileNumeral(value: number) {
+  return ['一', '二', '三', '四', '五', '六', '七', '八', '九'][value - 1]
+}
+
+function suitDots(value: number) {
+  const layouts: Record<number, number[]> = {
+    1: [5],
+    2: [1, 9],
+    3: [1, 5, 9],
+    4: [1, 3, 7, 9],
+    5: [1, 3, 5, 7, 9],
+    6: [1, 3, 4, 6, 7, 9],
+    7: [1, 3, 4, 5, 6, 7, 9],
+    8: [1, 2, 3, 4, 6, 7, 8, 9],
+    9: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+  }
+  return layouts[value] || []
+}
+
+function bambooBars(value: number) {
+  if (value === 1) return [5]
+  const positions = [1, 3, 4, 6, 7, 9, 2, 8]
+  return positions.slice(0, value)
+}
+
+function TileFace({ tile, compact = false }: { tile: Tile; compact?: boolean }) {
+  if (tile.kind === 'honor') {
+    return <Text className={`face-honor honor-${tile.honor}`}>{tile.honor}</Text>
+  }
+  if (tile.suit === '万') {
+    return (
+      <View className='face-wan'>
+        <Text className='wan-number'>{tileNumeral(tile.value!)}</Text>
+        <Text className='wan-suit'>萬</Text>
+      </View>
+    )
+  }
+  if (tile.suit === '筒') {
+    return (
+      <View className={`face-grid face-dots ${compact ? 'compact' : ''}`}>
+        {Array.from({ length: 9 }).map((_, index) => (
+          <View className={`face-cell ${suitDots(tile.value!).includes(index + 1) ? 'visible' : ''}`} key={`dot-${tile.id}-${index}`}>
+            <View className={`dot dot-${(index % 3) + 1}`} />
+          </View>
+        ))}
+      </View>
+    )
+  }
+  return (
+    <View className={`face-grid face-bamboo ${compact ? 'compact' : ''}`}>
+      {Array.from({ length: 9 }).map((_, index) => (
+        <View className={`face-cell ${bambooBars(tile.value!).includes(index + 1) ? 'visible' : ''}`} key={`bar-${tile.id}-${index}`}>
+          {tile.value === 1 && index === 4 ? <Text className='bird-mark'>雀</Text> : <View className={`bamboo bamboo-${(index % 3) + 1}`} />}
+        </View>
+      ))}
+    </View>
+  )
+}
+
 function nextWildcard(indicator: Tile): Tile {
   if (indicator.kind === 'suit') {
     const value = indicator.value === 9 ? 1 : indicator.value! + 1
@@ -291,6 +350,7 @@ export default function Index() {
   const [pendingAction, setPendingAction] = useState<'碰' | '杠' | null>(null)
   const [afterKongPlayer, setAfterKongPlayer] = useState<number | null>(null)
   const [resultText, setResultText] = useState('')
+  const [showInfo, setShowInfo] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const ranking = useMemo(() => [...players].sort((a, b) => b.score - a.score), [players])
@@ -656,83 +716,117 @@ export default function Index() {
 
   const selectedTile = human.hand.find((tile) => tile.id === selectedTileId)
   const selectedTileCode = selectedTile ? tileCode(selectedTile) : null
+  const wallCount = Math.max(8, Math.min(18, Math.ceil(wall.length / 4)))
   return (
     <View className='table-page'>
-      <View className='table-topbar'>
-        <Text>第 {currentRound}/{rounds} 圈</Text>
-        <Text>剩余 {wall.length} 张</Text>
-        <Text>翻 {indicator ? tileText(indicator) : '-'}</Text>
-        <Text>赖 {wildcard ? tileText(wildcard) : '-'}</Text>
-      </View>
-
-      <View className='mahjong-table'>
-        <View className='wall wall-top'>{Array.from({ length: 16 }).map((_, index) => <View className='wall-brick' key={`top-${index}`} />)}</View>
-        <View className='wall wall-left'>{Array.from({ length: 10 }).map((_, index) => <View className='wall-brick' key={`left-${index}`} />)}</View>
-        <View className='wall wall-right'>{Array.from({ length: 10 }).map((_, index) => <View className='wall-brick' key={`right-${index}`} />)}</View>
-
-        <View className='opponent opponent-top'>
-          <View className='portrait avatar-2'>弋</View>
-          <Text className='opponent-name'>{players[2].name}</Text>
-          <View className='back-row'>{players[2].hand.map((tile) => <View className='tile-back' key={tile.id} />)}</View>
-        </View>
-        <View className='opponent opponent-left'><View className='portrait avatar-3'>漳</View><Text className='opponent-name'>{players[3].name}</Text><Text className='tile-count'>{players[3].hand.length}张</Text></View>
-        <View className='opponent opponent-right'><View className='portrait avatar-1'>南</View><Text className='opponent-name'>{players[1].name}</Text><Text className='tile-count'>{players[1].hand.length}张</Text></View>
-
-        <View className='center-info'>
-          <Text className='round-digit'>{String(currentRound).padStart(2, '0')}</Text>
-          <Text className='dealer-text'>庄 {players[dealerId].name}</Text>
-          <Text className='turn-text'>{message}</Text>
+      <View className='game-stage'>
+        <View className='table-topbar'>
+          <Text className='round-label'>对局 {currentRound}/{rounds}</Text>
+          <View className='remaining-box'><Text className='remaining-icon'>▰</Text><Text>还剩 {wall.length} 张</Text></View>
+          <View className='wild-box'>
+            <Text>翻 {indicator ? tileText(indicator) : '-'}</Text>
+            <Text>赖 {wildcard ? tileText(wildcard) : '-'}</Text>
+          </View>
         </View>
 
-        {players.map((player) => (
-          <View className={`discard-river river-${player.id}`} key={`river-${player.id}`}>
-            {player.discards.map((tile) => (
-              <View
-                className={`discard-tile suit-${tile.kind === 'suit' ? tile.suit : 'honor'} ${selectedTileCode === tileCode(tile) ? 'matched' : ''}`}
-                key={tile.id}
-              >
-                <Text>{tile.kind === 'honor' ? tile.honor : tile.value}</Text>
-                <Text className='discard-suit'>{tile.kind === 'honor' ? '字' : tile.suit}</Text>
-              </View>
-            ))}
-          </View>
-        ))}
-      </View>
+        <View className='mahjong-table'>
+          <View className='table-pattern'>魅力南陵</View>
+          <View className='wall wall-top'>{Array.from({ length: wallCount }).map((_, index) => <View className='wall-brick' key={`top-${index}`} />)}</View>
+          <View className='wall wall-left'>{Array.from({ length: Math.max(6, wallCount - 5) }).map((_, index) => <View className='wall-brick' key={`left-${index}`} />)}</View>
+          <View className='wall wall-right'>{Array.from({ length: Math.max(6, wallCount - 5) }).map((_, index) => <View className='wall-brick' key={`right-${index}`} />)}</View>
 
-      <View className='human-area'>
-        <View className='human-status'><Text>{human.name} · {SEATS[0]}</Text><Text>{turn === 0 ? '你的回合' : '等待对手'}</Text></View>
-        {!!human.melds.length && <ScrollView className='meld-scroll' scrollX><View className='meld-row'>{human.melds.map((meld, index) => <View className='meld-box' key={`${meld.type}-${index}`}><Text className='meld-type'>{meld.type}</Text>{meld.tiles.map((tile) => <Text key={tile.id}>{tileText(tile)}</Text>)}</View>)}</View></ScrollView>}
-        <ScrollView className='hand-scroll' scrollX>
-          <View className='hand-row'>
-            {human.hand.map((tile) => (
-              <View key={tile.id} className={`mahjong-tile ${selectedTileId === tile.id ? 'selected' : ''} ${wildcard && sameTile(tile, wildcard) ? 'wildcard' : ''} suit-${tile.kind === 'suit' ? tile.suit : 'honor'}`} onClick={() => turn === 0 && !pendingAction && setSelectedTileId(tile.id)}>
-                {wildcard && sameTile(tile, wildcard) && <Text className='wild-mark'>赖</Text>}
-                {tile.kind === 'suit' ? (
-                  <>
-                    <Text className='tile-glyph'>{tile.value}</Text>
-                    <Text className='tile-glyph-suit'>{tile.suit}</Text>
-                  </>
-                ) : (
-                  <Text className='tile-honor'>{tile.honor}</Text>
-                )}
-              </View>
-            ))}
+          <View className='side-tools left-tools'>
+            <Button className='edge-tool' onClick={() => setShowInfo((value) => !value)}>⚙</Button>
+            <View className='edge-tool'>局</View>
           </View>
-        </ScrollView>
+          <View className='side-tools right-tools'>
+            <View className='edge-tool'>···</View>
+            <View className='edge-tool'>聊</View>
+          </View>
 
-        {pendingAction ? (
-          <View className='action-row action-floating'>
-            <Button className='round-action pass-action' onClick={passClaim}>过</Button>
-            {pendingAction === '碰' && <Button className='round-action pong-action' onClick={declarePong}>碰</Button>}
-            {pendingAction === '杠' && <Button className='round-action kong-action' onClick={declareOpenKong}>杠</Button>}
+          {[2, 3, 1].map((playerId) => (
+            <View className={`player-hud hud-${playerId}`} key={`hud-${playerId}`}>
+              <View className={`portrait avatar-${playerId}`}>{players[playerId].name.slice(0, 1)}</View>
+              <View className='hud-copy'>
+                <Text className='hud-name'>{players[playerId].name}</Text>
+                <Text className='hud-score'>{players[playerId].score >= 0 ? '+' : ''}{players[playerId].score} 分</Text>
+              </View>
+              {dealerId === playerId && <Text className='dealer-badge'>庄</Text>}
+            </View>
+          ))}
+
+          <View className='opponent opponent-top'>
+            <View className='back-row'>{players[2].hand.map((tile) => <View className='tile-back' key={tile.id} />)}</View>
           </View>
-        ) : (
-          <View className='action-row action-floating'>
-            {(concealedKong || upgradeKong) && <Button className='round-action kong-action' onClick={declareSelfKong}>杠</Button>}
-            <Button className='round-action win-action' disabled={turn !== 0} onClick={declareWin}>胡</Button>
-            <Button className='round-action discard-action' disabled={turn !== 0 || !selectedTileId} onClick={humanDiscard}>{selectedTile ? `打 ${tileText(selectedTile)}` : '出牌'}</Button>
+
+          <View className='center-info'>
+            <View className='direction-grid'>
+              <Text>南</Text><Text>西</Text><Text>北</Text><Text>东</Text>
+            </View>
+            <Text className='round-digit'>{String(currentRound).padStart(2, '0')}</Text>
+            <Text className='dealer-text'>庄 {players[dealerId].name}</Text>
+            <Text className='turn-text'>{message}</Text>
           </View>
-        )}
+
+          {players.map((player) => (
+            <View className={`discard-river river-${player.id}`} key={`river-${player.id}`}>
+              {player.discards.map((tile, index) => (
+                <View
+                  className={`discard-tile suit-${tile.kind === 'suit' ? tile.suit : 'honor'} ${selectedTileCode === tileCode(tile) ? 'matched' : ''} ${index === player.discards.length - 1 ? 'latest' : ''}`}
+                  key={tile.id}
+                >
+                  <TileFace tile={tile} compact />
+                </View>
+              ))}
+            </View>
+          ))}
+
+          {showInfo && (
+            <View className='match-info-panel'>
+              <Text>当前庄家：{players[dealerId].name}</Text>
+              <Text>连庄：{dealerStreak}</Text>
+              <Text>牌墙：{wall.length}</Text>
+              <Text>赖子：{wildcard ? tileText(wildcard) : '-'}</Text>
+            </View>
+          )}
+
+          <View className='human-area'>
+            <View className='human-status'>
+              <View className='human-hud'>
+                <View className='portrait avatar-0'>{human.name.slice(0, 1)}</View>
+                <View><Text className='hud-name'>{human.name}</Text><Text className='hud-score'>{human.score >= 0 ? '+' : ''}{human.score} 分</Text></View>
+                {dealerId === 0 && <Text className='dealer-badge'>庄</Text>}
+              </View>
+              <Text className='turn-state'>{turn === 0 ? '你的回合' : '等待对手'}</Text>
+            </View>
+            {!!human.melds.length && <ScrollView className='meld-scroll' scrollX><View className='meld-row'>{human.melds.map((meld, index) => <View className='meld-box' key={`${meld.type}-${index}`}><Text className='meld-type'>{meld.type}</Text>{meld.tiles.map((tile) => <Text key={tile.id}>{tileText(tile)}</Text>)}</View>)}</View></ScrollView>}
+            <ScrollView className='hand-scroll' scrollX>
+              <View className='hand-row'>
+                {human.hand.map((tile) => (
+                  <View key={tile.id} className={`mahjong-tile ${selectedTileId === tile.id ? 'selected' : ''} ${wildcard && sameTile(tile, wildcard) ? 'wildcard' : ''} suit-${tile.kind === 'suit' ? tile.suit : 'honor'}`} onClick={() => turn === 0 && !pendingAction && setSelectedTileId(tile.id)}>
+                    {wildcard && sameTile(tile, wildcard) && <Text className='wild-mark'>赖</Text>}
+                    <TileFace tile={tile} />
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
+
+          {pendingAction ? (
+            <View className='action-row action-floating'>
+              <Button className='round-action pass-action' onClick={passClaim}>过</Button>
+              {pendingAction === '碰' && <Button className='round-action pong-action' onClick={declarePong}>碰</Button>}
+              {pendingAction === '杠' && <Button className='round-action kong-action' onClick={declareOpenKong}>杠</Button>}
+            </View>
+          ) : (
+            <View className='action-row action-floating'>
+              {(concealedKong || upgradeKong) && <Button className='round-action kong-action' onClick={declareSelfKong}>杠</Button>}
+              <Button className='round-action win-action' disabled={turn !== 0} onClick={declareWin}>胡</Button>
+              <Button className='round-action pass-action' disabled={turn === 0}>过</Button>
+              <Button className='round-action discard-action' disabled={turn !== 0 || !selectedTileId} onClick={humanDiscard}>{selectedTile ? `打${tileText(selectedTile)}` : '出牌'}</Button>
+            </View>
+          )}
+        </View>
       </View>
     </View>
   )
