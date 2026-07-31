@@ -97,16 +97,21 @@
 .face-honor { font-family:'STKaiti','KaiTi',serif; font-size:43px; line-height:1; font-weight:900; }
 .honor-东,.honor-南,.honor-西,.honor-北 { color:#1d1d1d; }
 .honor-中 { color:#bd1117; }.honor-发 { color:#0a8b4f; }.honor-白 { color:#3274a5; text-shadow:0 0 0 #3274a5; }
-.face-grid { width:72%; height:72%; display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); gap:1px; }
-.face-grid.compact { width:78%; height:78%; }
+.face-grid { width:78%; height:78%; display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); gap:2px; }
+.face-grid.compact { width:82%; height:82%; gap:1px; }
 .face-cell { display:flex; align-items:center; justify-content:center; opacity:0; }
 .face-cell.visible { opacity:1; }
-.dot { width:12px; height:12px; border-radius:50%; border:2px solid currentColor; box-shadow:inset 0 0 0 2px #fff; }
-.dot-1 { color:#c6232a; background:#c6232a; }.dot-2 { color:#208f51; background:#208f51; }.dot-3 { color:#255ca8; background:#255ca8; }
-.bamboo { width:5px; height:18px; border-radius:3px; background:linear-gradient(180deg,currentColor 0 43%,#d7f2d5 43% 56%,currentColor 56%); transform:rotate(8deg); }
-.bamboo-1 { color:#13864c; }.bamboo-2 { color:#1c68a9; transform:rotate(-8deg); }.bamboo-3 { color:#ba2630; }
-.bird-mark { color:#13864c; font-family:'STKaiti','KaiTi',serif; font-size:24px; font-weight:900; }
-.discard-tile .face-honor { font-size:28px; }.discard-tile .wan-number { font-size:19px; }.discard-tile .wan-suit { font-size:16px; }.discard-tile .dot { width:7px; height:7px; border-width:1px; box-shadow:none; }.discard-tile .bamboo { width:3px; height:11px; }
+.dot { width:15px; height:15px; border-radius:50%; border:2px solid currentColor; background:radial-gradient(circle at 38% 35%,#fff 0 16%,currentColor 18% 45%,#fff 47% 59%,currentColor 61%); box-shadow:0 1px 1px rgba(0,0,0,.18); }
+.dot-1 { color:#c91d2b; }.dot-2 { color:#138d50; }.dot-3 { color:#215bb0; }
+.dots-1 .face-cell:nth-child(5) .dot { width:28px; height:28px; color:#168957; border-width:3px; }
+.face-bamboo { width:76%; height:80%; }
+.bamboo { position:relative; width:7px; height:22px; border-radius:4px; background:linear-gradient(180deg,currentColor 0 38%,#e9f7e6 39% 49%,currentColor 50% 100%); box-shadow:inset 1px 0 0 rgba(255,255,255,.42),0 1px 1px rgba(0,0,0,.18); transform:rotate(7deg); }
+.bamboo::after { content:''; position:absolute; left:1px; right:1px; top:4px; height:2px; border-radius:2px; background:rgba(255,255,255,.45); }
+.face-cell:nth-child(3n+1) .bamboo { color:#148a4d; transform:rotate(8deg); }
+.face-cell:nth-child(3n+2) .bamboo { color:#2367ae; transform:rotate(-8deg); }
+.face-cell:nth-child(3n) .bamboo { color:#c52831; transform:rotate(6deg); }
+.bird-mark { display:flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:50% 50% 46% 54%; color:#0f884a; font-family:'STKaiti','KaiTi',serif; font-size:21px; font-weight:900; background:radial-gradient(circle at 35% 30%,#f0d45f 0 12%,transparent 13%),linear-gradient(145deg,#1ca660,#08723f); -webkit-text-stroke:1px #f7f1d3; text-shadow:0 1px 1px rgba(0,0,0,.25); }
+.discard-tile .face-honor { font-size:28px; }.discard-tile .wan-number { font-size:19px; }.discard-tile .wan-suit { font-size:16px; }.discard-tile .dot { width:8px; height:8px; border-width:1px; box-shadow:none; }.discard-tile .dots-1 .face-cell:nth-child(5) .dot { width:15px; height:15px; border-width:2px; }.discard-tile .bamboo { width:4px; height:13px; }.discard-tile .bird-mark { width:18px; height:18px; font-size:10px; -webkit-text-stroke:0; }
 .meld-row { padding-bottom:6px; }
 .meld-box { display:flex; gap:5px; padding:7px 9px; border-radius:7px; color:#1d211e; background:linear-gradient(180deg,#fffdf5,#d8dbd3); font-size:16px; font-weight:800; box-shadow:0 4px 0 #aeb2aa,0 7px 10px rgba(0,0,0,.25); }
 .meld-type { color:#9a6c14; }

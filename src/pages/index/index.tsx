@@ -118,7 +118,7 @@ function TileFace({ tile, compact = false }: { tile: Tile; compact?: boolean }) 
   }
   if (tile.suit === '筒') {
     return (
-      <View className={`face-grid face-dots ${compact ? 'compact' : ''}`}>
+      <View className={`face-grid face-dots dots-${tile.value} ${compact ? 'compact' : ''}`}>
         {Array.from({ length: 9 }).map((_, index) => (
           <View className={`face-cell ${suitDots(tile.value!).includes(index + 1) ? 'visible' : ''}`} key={`dot-${tile.id}-${index}`}>
             <View className={`dot dot-${(index % 3) + 1}`} />
@@ -128,7 +128,7 @@ function TileFace({ tile, compact = false }: { tile: Tile; compact?: boolean }) 
     )
   }
   return (
-    <View className={`face-grid face-bamboo ${compact ? 'compact' : ''}`}>
+    <View className={`face-grid face-bamboo bamboo-${tile.value} ${compact ? 'compact' : ''}`}>
       {Array.from({ length: 9 }).map((_, index) => (
         <View className={`face-cell ${bambooBars(tile.value!).includes(index + 1) ? 'visible' : ''}`} key={`bar-${tile.id}-${index}`}>
           {tile.value === 1 && index === 4 ? <Text className='bird-mark'>雀</Text> : <View className={`bamboo bamboo-${(index % 3) + 1}`} />}
