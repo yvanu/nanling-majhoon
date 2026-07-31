@@ -719,6 +719,11 @@ export default function Index() {
   const wallCount = Math.max(8, Math.min(18, Math.ceil(wall.length / 4)))
   return (
     <View className='table-page'>
+      <View className='rotate-device-tip'>
+        <View className='rotate-phone'>↻</View>
+        <Text className='rotate-title'>请横屏游戏</Text>
+        <Text className='rotate-desc'>旋转手机后即可进入牌桌</Text>
+      </View>
       <View className='game-stage'>
         <View className='table-topbar'>
           <Text className='round-label'>对局 {currentRound}/{rounds}</Text>

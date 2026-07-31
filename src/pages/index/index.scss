@@ -26,8 +26,12 @@
 .seat { color:#e6c66b; font-weight:900; }
 .primary-btn { margin-top:28px; height:96px; line-height:96px; border-radius:24px; background:linear-gradient(180deg,#f1d881,#caa74a); color:#112c25; font-size:31px; font-weight:900; }
 
-.table-page { width:100vw; height:100vh; overflow:hidden; color:#fff; background:#021211; }
-.game-stage { position:relative; width:100vw; height:100vh; min-width:960px; min-height:540px; overflow:hidden; }
+.table-page { width:100vw; height:100vh; height:100dvh; overflow:hidden; color:#fff; background:#021211; }
+.game-stage { position:relative; width:100%; height:100%; overflow:hidden; }
+.rotate-device-tip { display:none; position:absolute; inset:0; z-index:100; align-items:center; justify-content:center; flex-direction:column; gap:14px; color:#f8e6a8; background:radial-gradient(circle at center,#0b746d,#032f2c 72%); text-align:center; }
+.rotate-phone { width:92px; height:58px; line-height:58px; border:4px solid #f8e6a8; border-radius:14px; font-size:38px; font-weight:900; box-shadow:0 0 24px rgba(248,230,168,.28); }
+.rotate-title { font-size:28px; font-weight:900; }
+.rotate-desc { color:rgba(255,255,255,.72); font-size:17px; }
 .table-topbar { position:absolute; z-index:40; top:10px; left:50%; transform:translateX(-50%); width:56%; display:flex; justify-content:space-between; align-items:center; color:#d8ebe7; font-size:18px; font-weight:800; text-shadow:0 2px 4px rgba(0,0,0,.55); }
 .remaining-box,.wild-box { display:flex; gap:10px; align-items:center; padding:7px 12px; border-radius:8px; background:rgba(0,31,29,.5); border:1px solid rgba(255,255,255,.08); }
 .remaining-icon { color:#78d73b; }
@@ -111,8 +115,9 @@
 .match-info-panel { position:absolute; z-index:35; left:8%; top:12%; display:flex; flex-direction:column; gap:5px; padding:12px 14px; border-radius:8px; background:rgba(4,18,18,.9); border:1px solid rgba(255,255,255,.12); color:#e8efed; font-size:14px; }
 .result-page { height:100vh; }.ranking-list { margin-bottom:24px; }.rank-card { min-height:116px; padding:18px; border-radius:22px; background:rgba(255,255,255,.065); border:1px solid rgba(255,255,255,.08); margin-bottom:14px; }.rank-no { width:54px; color:#e6c66b; font-size:25px; font-weight:900; }.rank-card .avatar { width:60px; height:60px; border-radius:18px; font-size:24px; }.rank-meta { margin-top:5px; font-size:20px; }.score { font-size:28px; font-weight:900; }.positive { color:#91e5b8; }.negative { color:#f29b91; }
 
-@media (max-aspect-ratio: 4/3) and (orientation: portrait) {
-  .game-stage { width:100vh; height:100vw; min-width:960px; min-height:540px; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%) rotate(90deg); transform-origin:center; }
+@media (orientation: portrait) {
+  .rotate-device-tip { display:flex; }
+  .game-stage { display:none; }
 }
 @media (max-height: 640px) {
   .mahjong-tile { width:58px; height:84px; }
